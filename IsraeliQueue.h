@@ -6,7 +6,13 @@
 #define FRIEND_QUOTA 5
 #define RIVAL_QUOTA 3
 
-typedef struct IsraeliQueue_t * IsraeliQueue;
+typedef struct IsraeliQueue_t{
+    FriendshipFunction *friendship_functions;
+    ComparisonFunction comparison_function;
+    int friendship_threshold;
+    int rivalry_threshold;
+    void *head;
+} *IsraeliQueue;
 
 typedef int (*FriendshipFunction)(void*,void*);
 typedef int (*ComparisonFunction)(void*,void*);
