@@ -90,6 +90,8 @@ void copyString(char* dest, char* src)
         dest[i] = src [i];
         i++;
     }
+    dest[i] = 0;
+    
 }
 
 int stringToInt(const char* str)
@@ -160,6 +162,10 @@ Hacker mallocHacker(int num_of_courses, int num_of_students)
             }
         }
     }
+
+    new_hacker -> size_friends_id = 0;
+    new_hacker ->size_rivals_id = 0;
+
     return new_hacker;
 }
 
@@ -177,6 +183,7 @@ void destroyHacker(Hacker hacker)
                 else
                     break;
             }
+            free(hacker->friends_id);
         }
         if(hacker->rivals_id){
             for(int i = 0; i < hacker->size_rivals_id; i++){
@@ -185,6 +192,7 @@ void destroyHacker(Hacker hacker)
                 else
                     break;
             }
+            free(hacker->rivals_id);
         }
         free(hacker);
     }
@@ -251,10 +259,12 @@ void putLineInIdArray(Hacker hacker, char* line, char type)
         token[strcspn(token, "\n")] = 0;
         if (type == 'f') {
             copyString(hacker->friends_id[index++], token);
+            hacker->size_friends_id += 1;
             //hacker->friends_id[index++] = strdup(token);
         }
         else {
             copyString(hacker->rivals_id[index++], token);
+            hacker->size_rivals_id += 1;
             //hacker->rivals_id[index++] = strdup(token);
         }
         token = strtok(NULL, space);

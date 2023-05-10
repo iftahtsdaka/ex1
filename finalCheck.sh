@@ -4,7 +4,7 @@ mkdir finalCheckTmpDir
 unzip $1 -d finalCheckTmpDir 2> /dev/null
 cd finalCheckTmpDir
 
-gcc -std=c99 -o HackEnrollment -I/home/mtm/public/2223b/ex1/ -Itool -Wall -pedantic-errors -Werror -DNDEBUG *.c tool/*.c
+gcc -std=c99 -o HackEnrollment -I/home/mtm/public/2223b/ex1/ -lm -Itool -Wall -pedantic-errors -Werror -DNDEBUG *.c tool/*.c
 
 if [ $? -ne 0 ] 
 	then
