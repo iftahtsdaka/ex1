@@ -100,12 +100,12 @@ void IsraeliQueueDestroy(IsraeliQueue q)
 }
 
 
-int getRivalryMeasure(IsraeliQueue q, Item item_1, Item item_2)
+int getRivalryMeasure(IsraeliQueue q, Item item_to_insert, Item potential_rival)
 {
     int number_of_friendship_measures = getFriendshipMeasureSize(q->friendship_measures);
     int sum = 0;
     for(int i = 0; i < number_of_friendship_measures; ++i){
-        sum += q->friendship_measures[i](item_1->ptr, item_2->ptr);
+        sum += q->friendship_measures[i](item_to_insert->ptr, potential_rival->ptr);
     }
     return sum/number_of_friendship_measures;
 }
@@ -114,7 +114,7 @@ Item getRivalsBehind(IsraeliQueue q, Item friend, Item item_to_insert)
 {
     Item potential_rival = friend->next;
     while(potential_rival){
-        int rivalry_measure = getRivalryMeasure(q, potential_rival, item_to_insert);
+        int rivalry_measure = getRivalryMeasure(q, item_to_insert, potential_rival);
         if(rivalry_measure < q->rivalry_threshold && potential_rival->rivals_in_queue < RIVAL_QUOTA){
             return potential_rival;
         }
@@ -134,7 +134,7 @@ IsraeliQueueError enqueueItem(IsraeliQueue q, Item item_to_insert)
     int number_of_friendship_measures = getFriendshipMeasureSize(q->friendship_measures);
     while(potential_friend)
     {
-        if(potential_friend->friends_in_queue > FRIEND_QUOTA || potential_friend == item_to_insert)
+        if(potential_friend->friends_in_queue >= FRIEND_QUOTA || potential_friend == item_to_insert)
         {
             //If friend quota is full continue to the next potential friend
             potential_friend = potential_friend->next;
@@ -160,11 +160,14 @@ IsraeliQueueError enqueueItem(IsraeliQueue q, Item item_to_insert)
             }
         }
         //Try the next friend
-        potential_friend = potential_friend->next;
+        if(potential_friend->next){
+            potential_friend = potential_friend->next;
+        }
+        else{
+            item_to_insert->next = NULL;
+            potential_friend->next = item_to_insert;
+        }
     }
-    //If Item can't cut in queue place it at the end of the queue
-    item_to_insert->next = NULL;
-    potential_friend = item_to_insert;
     return ISRAELIQUEUE_SUCCESS;
 }
 

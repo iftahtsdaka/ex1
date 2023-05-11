@@ -182,20 +182,21 @@ int compareId(void* student_hacker, void* student)
     return 0;
 }
 
+static int sumName(char* name){
+    int sum = 0;
+    for(int i = 0; name[i]; ++i){
+        sum += name[i];
+    }
+    return sum;
+}
+
 int nameDifferences(void* void_first, void* void_second)
 //Israeli queue friendship measure
 {
     Student first = (Student)void_first, second = (Student)void_second;
-    int index = 0, sum = 0;
-    while(first->first_name[index] && second->first_name[index]){
-        sum += abs((first->first_name[index] - 'a') - (second->first_name[index] - 'a')) ;
-        index++;
-    }
-    index = 0;
-    while(first->surname[index] && second->surname[index]){
-        sum += abs((first->surname[index] - 'a') - (second->surname[index] - 'a')) ;
-        index++;
-    }
+    int first_name_sum = sumName(first->first_name) + sumName(first->surname);
+    int second_name_sum = sumName(second->first_name) + sumName(second->surname);
+    int sum = abs(first_name_sum - second_name_sum);
     return sum;
 }
 
@@ -314,19 +315,22 @@ Course getCourse(int course_number, EnrollmentSystem sys){
 
 IsraeliQueueError enqueueHacker(Hacker hacker, EnrollmentSystem sys){
     Student student_hacker = findStudentById(sys, hacker->hacker_id);
+    assert(student_hacker);
     IsraeliQueueError success = ISRAELIQUEUE_SUCCESS;
     for(int j = 0; j < hacker->size_desired_courses; ++j){
         int desired_course = hacker->desired_courses[j];
-        Course course = getCourse(desired_course, sys);
-        assert(course);
-        if(!course){
-            continue;
+        if(desired_course){
+            Course course = getCourse(desired_course, sys);
+            assert(course);
+            if(!course){
+                continue;
+            }
+            if(course->course_number == desired_course)
+            {
+                success = IsraeliQueueEnqueue(course->course_queue, student_hacker);
+                assert(IsraeliQueueContains(course->course_queue, student_hacker));
+                assert(success == ISRAELIQUEUE_SUCCESS);
         }
-        if(course->course_number == desired_course)
-        {
-            success = IsraeliQueueEnqueue(course->course_queue, student_hacker);
-            assert(IsraeliQueueContains(course->course_queue, student_hacker));
-            assert(success == ISRAELIQUEUE_SUCCESS);
         }
     }
     return success;
@@ -349,19 +353,25 @@ bool studentInCourse(Student student, Course course){
 
 bool hackerGotIn(Hacker hacker, EnrollmentSystem sys){
     Student student_hacker = findStudentById(sys, hacker->hacker_id);
+    if(hacker->desired_courses[0] == 0){
+        // If the hacker did not ask for any course he got in!
+        return true;
+    }
     int required_courses = hacker->size_desired_courses >= 2 ? 2 : 1;
     for(int j = 0; j < hacker->size_desired_courses; ++j){
-        Course course = getCourse(hacker->desired_courses[j], sys);
-        if(!course){
-            continue;
-        }
-        if(studentInCourse(student_hacker, course)){
-            --required_courses;
-            if(required_courses == 0){
-                return true;
+        if(hacker->desired_courses[j]){
+            Course course = getCourse(hacker->desired_courses[j], sys);
+            if(!course){
+                continue;
+            }
+            if(studentInCourse(student_hacker, course)){
+                --required_courses;
+                if(required_courses == 0){
+                    return true;
+                }
             }
         }
-    }
+    }   
     return false;
 }
 
@@ -379,13 +389,15 @@ Hacker hackerLeftOut(EnrollmentSystem sys)
 }
 
 void writeEnrollmentQueue(FILE* out, Course course){
-    fprintf(out, "%d", course->course_number);
     Student head = (Student)IsraeliQueueDequeue(course->course_queue);
+    if(head){
+        fprintf(out, "%d", course->course_number);
     while(head){
         fprintf(out, " %s", head->student_id);
         head = IsraeliQueueDequeue(course->course_queue);
     }
     fprintf(out, "\n");
+    }
 }
 
 static IsraeliQueueError addHackersFriendshipMeasures(EnrollmentSystem sys)
@@ -422,7 +434,7 @@ void hackEnrollment(EnrollmentSystem sys, FILE* out)
 
     Hacker left_out = hackerLeftOut(sys);
     if(left_out){
-        fprintf(out, "Cannot satisfy constraints for %s", left_out->hacker_id);
+        fprintf(out, "Cannot satisfy constraints for %s\n", left_out->hacker_id);
         return;
     }
 
@@ -444,8 +456,11 @@ EnrollmentSystem readEnrollment(EnrollmentSystem sys, FILE* queues)
 {
     int max_line = getMaxLineLength(queues);
     char* line = (char*)malloc(max_line * sizeof(char));
-    if(line == NULL)
+    if(line == NULL){
+        assert(line);
         return NULL;
+    }
+        
     char* result = NULL;
     char* token;
     char* space = " ";
@@ -457,6 +472,7 @@ EnrollmentSystem readEnrollment(EnrollmentSystem sys, FILE* queues)
         token = strtok(line, space);//read the course number
         int course_num = atoi(token);
         Course course = getCourse(course_num, sys);
+        assert(course);
         if(!course){
             return NULL;
         }

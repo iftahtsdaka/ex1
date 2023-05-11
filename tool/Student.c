@@ -219,6 +219,7 @@ void parseLineToHacker(Hacker hacker, char* line, int line_number)
             case 0: ;
                 token = strtok(line, space);
                 token[strcspn(token, "\n")] = 0;
+                token[strcspn(token, "\r")] = 0;
                 copyString(hacker->hacker_id, token);
                 //hacker->hacker_id = strdup(token);
                 break;
@@ -245,6 +246,7 @@ void putCoursesLineIntoHacker(Hacker hacker, char* line)
     char* token = strtok(line, space);
     while(token){
         token[strcspn(token, "\n")] = 0;
+        token[strcspn(token, "\r")] = 0;
         hacker->desired_courses[index++] = atoi(token);
         token = strtok(NULL, space);
     }
@@ -257,6 +259,7 @@ void putLineInIdArray(Hacker hacker, char* line, char type)
     char* token = strtok(line, space);
     while(token){
         token[strcspn(token, "\n")] = 0;
+        token[strcspn(token, "\r")] = 0;
         if (type == 'f') {
             copyString(hacker->friends_id[index++], token);
             hacker->size_friends_id += 1;
